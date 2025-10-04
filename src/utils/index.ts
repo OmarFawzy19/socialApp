@@ -3,3 +3,7 @@ export * from "./Encryption/hash.utils";
 export * from "./Services/email.utils";
 export * from "./Tokens/tokens.utils";
 export * from "./Services/email.utils";
+export * from "./errors/http-exception.utils";
+export * from "./errors/exceptions.utils";
+export * from "./Response/response-helper-utils";
+export * from "./Services/s3-client.utils";

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { IUserType } from "../../common/Interfaces/user.interface";
 import { GenderEnum, OtpTypeEnum, ProviderEnum } from "../../common/Enums/user.enum";
+import { decrypt, encrypt,generateHash, S3ClinetService } from "../../utils";
 
 const userSchema = new mongoose.Schema<IUserType>({
     firstName:{
@@ -61,6 +62,53 @@ const userSchema = new mongoose.Schema<IUserType>({
     }]
     
 })
+
+userSchema.pre('save',function(){
+
+    if(this.isModified('password')){
+
+        
+
+        //Hash Password
+this.password = generateHash(this.password as string);
+
+    }
+    //Encrypt Phone Number
+    if(this.isModified('phoneNumber')){
+        this.phoneNumber = encrypt(this.phoneNumber as string);
+        
+    }
+})
+    
+userSchema.pre(['findOne','findOneAndUpdate'],function(){
+
+    
+})
+    
+userSchema.post(/^find/,function(doc){
+
+    if ((this as unknown as {op:string}).op=='find'){
+        doc.forEach((user:IUserType)=>{
+            if(user.phoneNumber){
+           user.phoneNumber=decrypt(user.phoneNumber as string);
+            }
+        })
+    } else {
+        if(doc.phoneNumber){
+            doc.phoneNumber=decrypt(doc.phoneNumber as string);
+        }
+    }
+})
+userSchema.post('findOneAndDelete',async function(doc){
+    const s3ClientService=new S3ClinetService();
+    if(doc.profilePicture){
+        await s3ClientService.deleteFileFromS3(doc.profilePicture as string)
+    }
+    if(doc.coverPicture){
+        await s3ClientService.deleteFileFromS3(doc.coverPicture as string)
+    }
+})    
+
 
 const UserModel = mongoose.model<IUserType>("User",userSchema);
 export {UserModel};
